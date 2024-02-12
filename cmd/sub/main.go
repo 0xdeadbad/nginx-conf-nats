@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"text/template"
 
@@ -82,7 +83,7 @@ func main() {
 		panic(err)
 	}
 
-	nginxPid, err := strconv.Atoi(string(buff))
+	nginxPid, err := strconv.Atoi(strings.Trim(string(buff), "\n"))
 	if err != nil {
 		panic(err)
 	}
