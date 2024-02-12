@@ -117,6 +117,8 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 		log.Println(err)
 	}
 
+	log.Printf("Nginx conf updated: %+v\n", nginxConf)
+
 	return nil
 }
 
