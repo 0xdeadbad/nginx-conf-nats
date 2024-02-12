@@ -7,6 +7,10 @@ const (
 	NginxConfSvcOpRemove NginxConfSvcOp = "remove"
 )
 
+type NginxSvcReply struct {
+	Err string `json:"err"`
+}
+
 type NginxConf struct {
 	Op      NginxConfSvcOp `json:"op"`
 	Host    string         `json:"host"`

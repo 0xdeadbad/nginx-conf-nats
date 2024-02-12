@@ -3,6 +3,7 @@ module github.com/0xdeadbad/nginx-conf-nats
 go 1.21.5
 
 require (
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/nats-io/nats.go v1.32.0
 )

@@ -21,6 +21,15 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 	var nginxConf NginxConf
 	err := json.Unmarshal(msg.Data, &nginxConf)
 	if err != nil {
+		reply := NginxSvcReply{Err: err.Error()}
+		// TODO: treat the error
+		replyBytes, err := json.Marshal(reply)
+		log.Println(err)
+
+		// TODO: treat the error
+		err = msg.Respond(replyBytes)
+		log.Println(err)
+
 		return err
 	}
 
@@ -33,12 +42,30 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 
 		f, err := os.Create(fmt.Sprintf("%s/%s.conf", nginxConfFilesDir, nginxConf.Host))
 		if err != nil {
+			reply := NginxSvcReply{Err: err.Error()}
+			// TODO: treat the error
+			replyBytes, err := json.Marshal(reply)
+			log.Println(err)
+
+			// TODO: treat the error
+			err = msg.Respond(replyBytes)
+			log.Println(err)
+
 			return err
 		}
 		defer f.Close()
 
 		err = tmpl.Execute(f, nginxConf)
 		if err != nil {
+			reply := NginxSvcReply{Err: err.Error()}
+			// TODO: treat the error
+			replyBytes, err := json.Marshal(reply)
+			log.Println(err)
+
+			// TODO: treat the error
+			err = msg.Respond(replyBytes)
+			log.Println(err)
+
 			return err
 		}
 
@@ -47,6 +74,15 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 
 		err = os.Remove(fmt.Sprintf("%s/%s.conf", nginxConfFilesDir, nginxConf.Host))
 		if err != nil {
+			reply := NginxSvcReply{Err: err.Error()}
+			// TODO: treat the error
+			replyBytes, err := json.Marshal(reply)
+			log.Println(err)
+
+			// TODO: treat the error
+			err = msg.Respond(replyBytes)
+			log.Println(err)
+
 			return err
 		}
 	}
@@ -54,8 +90,21 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 	// Send SIGHUP to the nginx process to reload the config
 	err = syscall.Kill(nginxPid, syscall.SIGHUP)
 	if err != nil {
+		reply := NginxSvcReply{Err: err.Error()}
+		// TODO: treat the error
+		replyBytes, err := json.Marshal(reply)
+		log.Println(err)
+
+		// TODO: treat the error
+		err = msg.Respond(replyBytes)
+		log.Println(err)
+
 		return err
 	}
+
+	// Respond to the request
+
+	msg.Respond([]byte("ok"))
 
 	return nil
 }
@@ -70,7 +119,6 @@ func main() {
 
 	natsServerUrl := os.Getenv("NATS_SERVER_URL")
 	nginxPidFile := os.Getenv("NGINX_PID_FILE")
-	//nginxConfFilesDir := os.Getenv("NGINX_CONF_FILES_DIR")
 	templateFile := os.Getenv("NGINX_CONF_TEMPLATE_FILE")
 
 	tmpl, err := template.New(templateFile).ParseFiles(templateFile)
@@ -109,7 +157,10 @@ mainFor:
 			close(ch)
 			break mainFor
 		case msg := <-ch:
-			handleNginxConfMsg(msg, nginxPid, tmpl)
+			err = handleNginxConfMsg(msg, nginxPid, tmpl)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
