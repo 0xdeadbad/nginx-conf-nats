@@ -104,7 +104,18 @@ func handleNginxConfMsg(msg *nats.Msg, nginxPid int, tmpl *template.Template) er
 
 	// Respond to the request
 
-	msg.Respond([]byte("ok"))
+	reply := NginxSvcReply{}
+	replyBytes, err := json.Marshal(reply)
+	if err != nil {
+		// TODO: treat the error
+		log.Println(err)
+	}
+
+	err = msg.Respond(replyBytes)
+	if err != nil {
+		// TODO: treat the error
+		log.Println(err)
+	}
 
 	return nil
 }
