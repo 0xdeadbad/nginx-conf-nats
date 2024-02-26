@@ -12,8 +12,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-var opts struct {
-	Op      string `short:"o" long:"op" description:"Operation to perform" required:"true"`
+type addOpts struct {
 	Host    string `short:"h" long:"host" description:"Host to add or remove from nginx configuration" required:"true"`
 	Ip      string `short:"i" long:"ip" description:"IP address of the host" required:"true"`
 	Port    int    `short:"p" long:"port" description:"Port of the host" required:"true"`
@@ -23,8 +22,20 @@ var opts struct {
 	SslKey  string `short:"k" long:"ssl-key" description:"SSL key file" required:"false"`
 }
 
+type removeOpts struct {
+	Host string `short:"h" long:"host" description:"Host to add or remove from nginx configuration" required:"true"`
+}
+
+var opts struct {
+	Op           string
+	SubComAdd    addOpts    `command:"add"`
+	SubComRemove removeOpts `command:"remove"`
+}
+
 func main() {
 	// ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+
+	var nginxConf NginxConf
 
 	err := godotenv.Load()
 	if err != nil {
@@ -36,15 +47,33 @@ func main() {
 		panic(err)
 	}
 
-	nginxConf := NginxConf{
-		Op:      NginxConfSvcOp(opts.Op),
-		Host:    opts.Host,
-		Ip:      opts.Ip,
-		Port:    opts.Port,
-		Https:   opts.Https,
-		Ssl:     opts.Ssl,
-		SslCert: opts.SslCert,
-		SslKey:  opts.SslKey,
+	if opts.SubComAdd.Host == "" && opts.SubComRemove.Host == "" {
+		log.Println("Host is required")
+		os.Exit(1)
+	}
+
+	if opts.SubComAdd.Host != "" {
+		opts.Op = "add"
+	} else {
+		opts.Op = "remove"
+	}
+
+	if opts.Op == "add" {
+		nginxConf = NginxConf{
+			Op:      NginxConfSvcOp(opts.Op),
+			Host:    opts.SubComAdd.Host,
+			Ip:      opts.SubComAdd.Ip,
+			Port:    opts.SubComAdd.Port,
+			Https:   opts.SubComAdd.Https,
+			Ssl:     opts.SubComAdd.Ssl,
+			SslCert: opts.SubComAdd.SslCert,
+			SslKey:  opts.SubComAdd.SslKey,
+		}
+	} else {
+		nginxConf = NginxConf{
+			Op:   NginxConfSvcOp(opts.Op),
+			Host: opts.SubComRemove.Host,
+		}
 	}
 
 	natsServerUrl := os.Getenv("NATS_SERVER_URL")
