@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	. "github.com/0xdeadbad/nginx-conf-nats/internal"
@@ -39,17 +40,16 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		panic("Error loading .env file")
+		log.Fatalln("Error loading .env file")
 	}
 
 	_, err = flags.Parse(&opts)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	if opts.SubComAdd.Host == "" && opts.SubComRemove.Host == "" {
-		log.Println("Host is required")
-		os.Exit(1)
+		log.Fatalln("Host is required for add or remove operation")
 	}
 
 	if opts.SubComAdd.Host != "" {
@@ -80,29 +80,28 @@ func main() {
 
 	nc, err := nats.Connect(natsServerUrl)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	defer nc.Close()
 
 	nginxConfSvcReq, err := json.Marshal(nginxConf)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	msg, err := nc.Request("nginx-conf-svc", nginxConfSvcReq, time.Second*30)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	reply := NginxSvcReply{}
 	err = json.Unmarshal(msg.Data, &reply)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	if reply.Err != "" {
-		log.Println(reply.Err)
-		os.Exit(1)
+		log.Fatalln(reply.Err)
 	}
 
 	log.Println("Ok")
